@@ -1,112 +1,47 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef MYROBOT_H
+#define MYROBOT_H
 
+#include <QObject>
+//On inclut le module network dans le fichier .pro
+#include <QTcpSocket>
+#include <QAbstractSocket>
 #include <QDebug>
+#include <QTimer>
+#include <QMutex>
 
-#include <QDialog>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QFormLayout>
-#include <QPushButton>
-#include <QWebEngineView>
-#include <QKeyEvent>
-#include "myrobot.h"
-#include <QtGamepad>
+class MyRobot : public QObject {
+    Q_OBJECT;
+public:
+    explicit MyRobot(QObject *parent = 0);  //MyTcpClient (ancien nom sur le fichier original)
+    void doConnect();
+    void disConnect();
+    void move(int cas);
+    void set_vitesse(int valeur);
+    void set_etat(int valeur);
+    void set_manette(bool valeur);
+    int get_vitesse();
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class Dialog; }
-QT_END_NAMESPACE
+    //short Crc16(unsigned char *Adresse_tab , unsigned char Taille_max);
+    qint64 Crc16(QByteArray Adresse_tab , int Taille_max);
+    QByteArray DataToSend;
+    QByteArray DataReceived;
+    QMutex Mutex;
 
-
-class MainWindow : public QDialog
-{
-    Q_OBJECT
-
-public :
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
-
-private slots :
-
-
-    //Connexion
-    void connexion();
-
-    //Lancement du mouvement
-    void avancer();
-    void gauche();
-    void droite();
-    void reculer();
-    void stop();
-    void hgauche();
-    void bgauche();
-    void hdroite();
-    void bdroite();
-
-    //batterie
-    void maj_batterie(QByteArray data);
-    void update();
-
-    //Clavier
-    void keyPressEvent(QKeyEvent* key_robot);
-    void keyReleaseEvent(QKeyEvent* key_robot);
-     void move_xbox();
-
-    //Données du robot
-
-    void on_slide_vitesse_valueChanged(int value);
-
-
-    //Boutons connexion et mouvement
-
-
-    void on_Gauche_pressed();
-    void on_avancer_pressed();
-    void on_droite_pressed();
-    void on_reculer_pressed();
-    void on_hgauche_pressed();
-    void on_hdroite_pressed();
-    void on_bgauche_pressed();
-    void on_bdroite_pressed();
-    void on_connexion_clicked();
-    void on_avancer_released();
-    void on_hdroite_released();
-    void on_droite_released();
-    void on_bdroite_released();
-    void on_reculer_released();
-    void on_bgauche_released();
-    void on_Gauche_released();
-    void on_hgauche_released();
-
-    //Mouvements cameras
-    void on_haut_camera_pressed();
-    void on_gauche_camera_pressed();
-    void on_droite_camera_pressed();
-    void on_bas_camera_pressed();
-
-    void cam_haut();
-    void cam_bas();
-    void cam_gauche();
-    void cam_droite();
-    void cam_filtre(int valeur);
-    void cam_reset();
-
-
+signals:
+    void updateUI(const QByteArray Data);
+public slots:
+    void connected();
+    void disconnected();
+    void bytesWritten(qint64 bytes);
+    void readyRead();
+    void MyTimerSlot();
 
 private:
+    QTcpSocket *socket;
+    QTimer *TimerEnvoi;
+    int m_vitesse;  //vitesse actuelle
+    int m_etat; //etats : avancer/aller Ã  gauche...
+    //Pour la manette
+  
 
-    //Affichage camera
-    QWebEngineView *view;
-    //QTimer *TimerReceiveOD;
-    //Mouvement camera
-    QNetworkAccessManager *manager;
-    QNetworkRequest request;
-    
-    //Robot
-    MyRobot* robot;
-
-    Ui::Dialog *ui;
-
-
-};
-#endif // MAINWINDOW_H
+#endif // MYROBOT_H
