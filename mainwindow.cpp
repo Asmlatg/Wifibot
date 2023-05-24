@@ -24,27 +24,9 @@ MainWindow::MainWindow(QWidget *parent)
     robot = new MyRobot(this);
     connect(robot, SIGNAL(updateUI(QByteArray)),this,SLOT(update()));
 
-    //
-
-
-
-
-          manager = new QNetworkAccessManager();
-   //Vue de la webcam du robot (independant du robot)
-          view = new QWebEngineView();
-          view->load(QUrl("http://192.168.1.106:8080/?action=stream"));
-          view->show();
-
-       this->ui->camera->addWidget(view);
-
-
 }
 
-void MainWindow::update()
-{
-    QByteArray data = robot->DataReceived;
-    maj_batterie(data);
-}
+
 
 MainWindow::~MainWindow()
 {
@@ -52,57 +34,7 @@ MainWindow::~MainWindow()
     delete manager;
 }
 
-//UTILISATION DU CLAVIER
-
-//Lorsque l'on appuie sur une touche, Ã§a va affectuer une des fonctions
-void MainWindow::keyPressEvent(QKeyEvent* key_robot){
-    switch(key_robot->key()){
-    case Qt::Key_Z :    //Avancer
-        robot->set_etat(1);
-        break;
-    case Qt::Key_Q :    //Gauche
-        robot->set_etat(2);
-        break;
-    case Qt::Key_D :    //Droite
-        robot->set_etat(3);
-        break;
-    case Qt::Key_S :    //Reculer
-        robot->set_etat(4);
-        break;
-    case Qt::Key_R :    //Stop
-        robot->set_etat(5);
-        break;
-    case Qt::Key_W :    //Filtre Gris
-           cam_filtre(1);
-           break;
-       case Qt::Key_X :    //Filtre
-           cam_filtre(2);
-           break;
-       case Qt::Key_C :
-           cam_filtre(3);
-           break;
-       case Qt::Key_V :
-           cam_filtre(4);
-           break;
-       case Qt::Key_B :
-           cam_filtre(5);
-           break;
-       case Qt::Key_H :
-           cam_filtre(6);
-           break;
-       case Qt::Key_J :
-           cam_filtre(7);
-           break;
-       case Qt::Key_N :
-           cam_reset();
-           break;
-    }
-}
-
-//Lorsque l'on relache, on s'arrete
-void MainWindow::keyReleaseEvent(QKeyEvent* key_robot){
-    robot->set_etat(5);
-}
+/
 
 //Fonctions reliees aux boutons :
 void MainWindow::connexion()
@@ -259,111 +191,15 @@ void MainWindow::on_slide_vitesse_valueChanged(int value)
 
 }
 
-//MOUVEMENT CAMERA
-void MainWindow::on_haut_camera_pressed()
-{
-    cam_haut();
-}
-
-void MainWindow::on_gauche_camera_pressed()
-{
-    cam_gauche();
-}
-
-void MainWindow::on_droite_camera_pressed()
-{
-    cam_droite();
-}
-
-void MainWindow::on_bas_camera_pressed()
-{
-    cam_bas();
-}
-
-void MainWindow::cam_haut()
-{
-    request.setUrl(QUrl("http://192.168.1.106:8080/?action=command&dest=0&plugin=0&id=10094853&group=1&value=-200"));
-    manager->get(request);
-}
-void MainWindow::cam_bas()
-{
-    request.setUrl(QUrl("http://192.168.1.106:8080/?action=command&dest=0&plugin=0&id=10094853&group=1&value=200"));
-    manager->get(request);
-
-}
-void MainWindow::cam_gauche()
-{
-    request.setUrl(QUrl("http://192.168.1.106:8080/?action=command&dest=0&plugin=0&id=10094852&group=1&value=200"));
-    manager->get(request);
-}
-void MainWindow::cam_droite()
-{
-    request.setUrl(QUrl("http://192.168.1.106:8080/?action=command&dest=0&plugin=0&id=10094852&group=1&value=-200"));
-    manager->get(request);
-}
-
-//Affichage Batterie
-
-void MainWindow::maj_batterie(QByteArray data){    //A tester
 
 
-      //Recupération de la valeur du robot
-    unsigned char batterie = (data[2]);
-    int valeur = (int)batterie;
-    //Passage en pourcentage
-    valeur = (valeur*100)/130;
-    QString bat_string = QString::number(valeur);
-
-    //Verification de l'état de la batterie : en marche, plus de batterie ou normal
-    if(((unsigned int) valeur <= 100) && ((unsigned int) valeur > 0)){  //Normal
-        ui->barre_batterie->setValue(valeur); //Si marche pas : test avec (int)robot->DataReceived[2]
-        ui->titre_batterie->setText("Batterie : " + bat_string + "%");
-
-    }
-    else if(((unsigned int) valeur > 100)){ //En charge
-        ui->barre_batterie->setValue(100);
-        ui->titre_batterie->setText("Plus de batterie");
-
-    }
-    else{   //Plus de batterie
-        ui->barre_batterie->setValue(0);
-
-    }
-}
 
 
-void MainWindow::cam_filtre(int valeur)
-{
-    //On envoie des requêtes Javascript pour appliquer des filtres
-    switch(valeur){
-    case 1 :
-        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' grayscale(100%)';");
-        break;
-    case 2 :
-        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' invert(100%)';");
-        break;
-    case 3 :
-        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' sepia(100%)';");
-        break;
-    case 4 :
-        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' blur(5px)';");
-        break;
-    case 5 :
-        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' saturate(200%)';");
-        break;
-    case 6 :
-        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' hue-rotate(180deg)';");
-        break;
-    case 7 :
-        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' brightness(50%)';");
-        break;
-    }
 
-}
-void MainWindow::cam_reset()
-{
-    view->page()->runJavaScript("document.body.firstChild.style.webkitFilter = ''");
-}
+
+
+
+
 
 
 
