@@ -41,7 +41,7 @@ private:
     QTimer *TimerEnvoi;
     int m_vitesse;  //vitesse actuelle
     int m_etat; //etats : avancer/aller Ã  gauche...
-    //Pour la manette
+
   
 
 #endif // MYROBOT_H
