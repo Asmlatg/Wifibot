@@ -12,18 +12,6 @@ MainWindow::MainWindow(QWidget *parent)
     TimerReceiveIR = new QTimer(this);
 
 
-
-    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irArD);
-    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irAvD);
-    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irArG);
-    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irAvG);
-
-    //
-
-    TimerReceiveIR->start(100);
-    robot = new MyRobot(this);
-    connect(robot, SIGNAL(updateUI(QByteArray)),this,SLOT(update()));
-
 }
 
 
