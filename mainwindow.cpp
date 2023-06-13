@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QUrl>
 #include <QWebEngineView>
+#include <cmath>
 
 MainWindow::MainWindow(QWidget *parent)
     : QDialog(parent)
@@ -12,9 +13,45 @@ MainWindow::MainWindow(QWidget *parent)
     TimerReceiveIR = new QTimer(this);
 
 
+
+    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irArD);
+    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irAvD);
+    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irArG);
+    connect(TimerReceiveIR, &QTimer::timeout, this, &MainWindow::display_irAvG);
+
+    //
+
+    TimerReceiveIR->start(100);
+    robot = new MyRobot(this);
+    connect(robot, SIGNAL(updateUI(QByteArray)),this,SLOT(update()));
+
+    //
+    connect(robot,SIGNAL(updateUI(QByteArray)), this, SLOT(odometrie_g()));
+    connect(robot, SIGNAL(updateUI(QByteArray)), this, SLOT(odometrie_d()));
+
+    //
+    xbox = new QGamepad();
+    connect(xbox, SIGNAL(axisLeftXChanged(double)), this, SLOT(move_xbox()));
+    connect(xbox, SIGNAL(axisLeftYChanged(double)), this, SLOT(move_xbox()));
+    connect(xbox, SIGNAL(buttonBChanged(bool)), this, SLOT(stop()));
+
+
+    manager = new QNetworkAccessManager();
+    //Vue de la webcam du robot (independant du robot)
+    view = new QWebEngineView();
+    view->load(QUrl("http://192.168.1.106:8080/?action=stream"));
+    view->show();
+
+    this->ui->camera->addWidget(view);
+
+
 }
 
-
+void MainWindow::update()
+{
+    QByteArray data = robot->DataReceived;
+    maj_batterie(data);
+}
 
 MainWindow::~MainWindow()
 {
@@ -22,12 +59,62 @@ MainWindow::~MainWindow()
     delete manager;
 }
 
-/
+//UTILISATION DU CLAVIER
+
+//Lorsque l'on appuie sur une touche, Ã§a va affectuer une des fonctions
+void MainWindow::keyPressEvent(QKeyEvent* key_robot){
+    switch(key_robot->key()){
+    case Qt::Key_Z :    //Avancer
+        robot->set_etat(1);
+        break;
+    case Qt::Key_Q :    //Gauche
+        robot->set_etat(2);
+        break;
+    case Qt::Key_D :    //Droite
+        robot->set_etat(3);
+        break;
+    case Qt::Key_S :    //Reculer
+        robot->set_etat(4);
+        break;
+    case Qt::Key_R :    //Stop
+        robot->set_etat(5);
+        break;
+    case Qt::Key_W :    //Filtre Gris
+        cam_filtre(1);
+        break;
+    case Qt::Key_X :    //Filtre
+        cam_filtre(2);
+        break;
+    case Qt::Key_C :
+        cam_filtre(3);
+        break;
+    case Qt::Key_V :
+        cam_filtre(4);
+        break;
+    case Qt::Key_B :
+        cam_filtre(5);
+        break;
+    case Qt::Key_H :
+        cam_filtre(6);
+        break;
+    case Qt::Key_J :
+        cam_filtre(7);
+        break;
+    case Qt::Key_N :
+        cam_reset();
+        break;
+    }
+}
+
+//Lorsque l'on relache, on s'arrete
+void MainWindow::keyReleaseEvent(QKeyEvent* key_robot){
+    robot->set_etat(5);
+}
 
 //Fonctions reliees aux boutons :
 void MainWindow::connexion()
 {
-   robot->doConnect();
+    robot->doConnect();
 }
 
 void MainWindow::avancer()
@@ -38,42 +125,42 @@ void MainWindow::avancer()
 
 void MainWindow::gauche()
 {
-     robot->set_etat(2);
+    robot->set_etat(2);
 }
 
 void MainWindow::droite()
 {
-     robot->set_etat(3);
+    robot->set_etat(3);
 }
 
 void MainWindow::reculer()
 {
-     robot->set_etat(4);
+    robot->set_etat(4);
 }
 
 void MainWindow::stop()
 {
-     robot->set_etat(5);
+    robot->set_etat(5);
 }
 
 void MainWindow::hgauche()
 {
-     robot->set_etat(6);
+    robot->set_etat(6);
 }
 
 void MainWindow::bgauche()
 {
-     robot->set_etat(7);
+    robot->set_etat(7);
 }
 
 void MainWindow::hdroite()
 {
-     robot->set_etat(8);
+    robot->set_etat(8);
 }
 
 void MainWindow::bdroite()
 {
-     robot->set_etat(9);
+    robot->set_etat(9);
 }
 
 
@@ -178,17 +265,3 @@ void MainWindow::on_slide_vitesse_valueChanged(int value)
     ui->titre_vitesse->setText(vit_string + " (" + pourcentage_string + "%)");
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
