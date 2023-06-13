@@ -2,7 +2,9 @@
 #include "ui_mainwindow.h"
 #include <QUrl>
 #include <QWebEngineView>
-#include <cmath>
+#include <opencv2/opencv.hpp>
+#include <QScreen>
+#include <QPixmap>
 
 MainWindow::MainWindow(QWidget *parent)
     : QDialog(parent)
@@ -30,19 +32,19 @@ MainWindow::MainWindow(QWidget *parent)
     connect(robot, SIGNAL(updateUI(QByteArray)), this, SLOT(odometrie_d()));
 
     //
-    xbox = new QGamepad();
-    connect(xbox, SIGNAL(axisLeftXChanged(double)), this, SLOT(move_xbox()));
-    connect(xbox, SIGNAL(axisLeftYChanged(double)), this, SLOT(move_xbox()));
-    connect(xbox, SIGNAL(buttonBChanged(bool)), this, SLOT(stop()));
+     xbox = new QGamepad();
+     connect(xbox, SIGNAL(axisLeftXChanged(double)), this, SLOT(move_xbox()));
+     connect(xbox, SIGNAL(axisLeftYChanged(double)), this, SLOT(move_xbox()));
+     connect(xbox, SIGNAL(buttonBChanged(bool)), this, SLOT(stop()));
 
 
-    manager = new QNetworkAccessManager();
-    //Vue de la webcam du robot (independant du robot)
-    view = new QWebEngineView();
-    view->load(QUrl("http://192.168.1.106:8080/?action=stream"));
-    view->show();
+          manager = new QNetworkAccessManager();
+   //Vue de la webcam du robot (independant du robot)
+          view = new QWebEngineView();
+          view->load(QUrl("http://192.168.1.106:8080/?action=stream"));
+          view->show();
 
-    this->ui->camera->addWidget(view);
+       this->ui->camera->addWidget(view);
 
 
 }
@@ -80,29 +82,32 @@ void MainWindow::keyPressEvent(QKeyEvent* key_robot){
         robot->set_etat(5);
         break;
     case Qt::Key_W :    //Filtre Gris
-        cam_filtre(1);
-        break;
+           cam_filtre(1);
+           break;
     case Qt::Key_X :    //Filtre
-        cam_filtre(2);
-        break;
+       cam_filtre(2);
+       break;
     case Qt::Key_C :
-        cam_filtre(3);
-        break;
+       cam_filtre(3);
+       break;
     case Qt::Key_V :
-        cam_filtre(4);
-        break;
+       cam_filtre(4);
+       break;
     case Qt::Key_B :
-        cam_filtre(5);
-        break;
+       cam_filtre(5);
+       break;
     case Qt::Key_H :
-        cam_filtre(6);
-        break;
+       cam_filtre(6);
+       break;
     case Qt::Key_J :
-        cam_filtre(7);
-        break;
+       cam_filtre(7);
+       break;
     case Qt::Key_N :
-        cam_reset();
-        break;
+       cam_reset();
+       break;
+   case Qt::Key_L :
+    cam_filtre(8);
+    break;
     }
 }
 
@@ -114,7 +119,7 @@ void MainWindow::keyReleaseEvent(QKeyEvent* key_robot){
 //Fonctions reliees aux boutons :
 void MainWindow::connexion()
 {
-    robot->doConnect();
+   robot->doConnect();
 }
 
 void MainWindow::avancer()
@@ -125,42 +130,42 @@ void MainWindow::avancer()
 
 void MainWindow::gauche()
 {
-    robot->set_etat(2);
+     robot->set_etat(2);
 }
 
 void MainWindow::droite()
 {
-    robot->set_etat(3);
+     robot->set_etat(3);
 }
 
 void MainWindow::reculer()
 {
-    robot->set_etat(4);
+     robot->set_etat(4);
 }
 
 void MainWindow::stop()
 {
-    robot->set_etat(5);
+     robot->set_etat(5);
 }
 
 void MainWindow::hgauche()
 {
-    robot->set_etat(6);
+     robot->set_etat(6);
 }
 
 void MainWindow::bgauche()
 {
-    robot->set_etat(7);
+     robot->set_etat(7);
 }
 
 void MainWindow::hdroite()
 {
-    robot->set_etat(8);
+     robot->set_etat(8);
 }
 
 void MainWindow::bdroite()
 {
-    robot->set_etat(9);
+     robot->set_etat(9);
 }
 
 
@@ -265,6 +270,7 @@ void MainWindow::on_slide_vitesse_valueChanged(int value)
     ui->titre_vitesse->setText(vit_string + " (" + pourcentage_string + "%)");
 
 }
+
 //MOUVEMENT CAMERA
 void MainWindow::on_haut_camera_pressed()
 {
@@ -307,6 +313,7 @@ void MainWindow::cam_droite()
     request.setUrl(QUrl("http://192.168.1.106:8080/?action=command&dest=0&plugin=0&id=10094852&group=1&value=-200"));
     manager->get(request);
 }
+
 //Affichage Batterie
 
 void MainWindow::maj_batterie(QByteArray data){    //A tester
@@ -369,6 +376,122 @@ void MainWindow::display_irAvG()
     ui->irAvG->display(ir);
 
 }
+
+float MainWindow::odometrie_g()
+{
+    float odo =float((((unsigned char)robot->DataReceived[8] << 24))+(((unsigned char)robot->DataReceived[7] << 16)) +(((unsigned char)robot->DataReceived[6] << 8)) +((unsigned char)robot->DataReceived[5]));
+        odo =odo/2448;
+         ui->odometrie_d->display(odo);
+        qDebug()<<"odometrieG;";
+        return odo;
+}
+//nombre de tours effectué par les roues
+float MainWindow::odometrie_d( )
+{
+    float odo =float((((unsigned char)robot->DataReceived[16] << 24))+(((unsigned char)robot->DataReceived[15] << 16)) +(((unsigned char)robot->DataReceived[14] << 8)) +((unsigned char)robot->DataReceived[13]));
+        odo = odo/2448;
+         ui->odometrie_d->display(odo);
+          qDebug()<<"odometrieD;";
+          return odo;
+
+}
+
+void MainWindow::cam_filtre(int valeur)
+{
+    //appliquer des filres
+    switch(valeur){
+    case 1 :
+        // appliquer grayscale filter
+        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' grayscale(100%)';");
+        break;
+    case 2 :
+        // appliquer le invert filter
+        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' invert(100%)';");
+        break;
+    case 3 :
+        // appliquer le sepia filter
+        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' sepia(100%)';");
+        break;
+    case 4 :
+        // appliquer le blur filter
+        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' blur(5px)';");
+        break;
+    case 5 :
+        // appliquer le saturate filter
+        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' saturate(200%)';");
+        break;
+    case 6 :
+        // appliquer le hue-rotate filter
+        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' hue-rotate(180deg)';");
+        break;
+    case 7 :
+        // appliquer brightness filter
+        view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' brightness(50%)';");
+        break;
+    case 8:
+            // Détecter les visages et ajouter des rectangles
+            view->page()->runJavaScript(R"(
+                var video = document.body.firstChild;
+                var canvas = document.createElement('canvas');
+                var context = canvas.getContext('2d');
+
+                canvas.width = video.offsetWidth;
+                canvas.height = video.offsetHeight;
+                video.parentNode.appendChild(canvas);
+
+                var script = document.createElement('script');
+                script.src = 'path/to/opencv.js';
+                script.onload = function() {
+                    cv.onRuntimeInitialized = function() {
+                        var src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+                        var dst = new cv.Mat();
+                        var gray = new cv.Mat();
+
+                        var cap = new cv.VideoCapture(video);
+                        var classifier = new cv.CascadeClassifier();
+
+                        // Load the pre-trained face detection classifier XML file
+                        classifier.load('https://raw.githubusercontent.com/kipr/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml');
+
+                        function processVideo() {
+                            cap.read(src);
+
+                            // Convert the video frame to grayscale
+                            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                            cv.equalizeHist(gray, gray);
+
+                            // Detect faces in the grayscale frame
+                            var faces = new cv.RectVector();
+                            classifier.detectMultiScale(gray, faces);
+
+                            // Draw rectangles around the detected faces
+                            for (var i = 0; i < faces.size(); i++) {
+                                var face = faces.get(i);
+                                var point1 = new cv.Point(face.x, face.y);
+                                var point2 = new cv.Point(face.x + face.width, face.y + face.height);
+                                cv.rectangle(src, point1, point2, [255, 0, 0, 255], 2);
+                            }
+
+                            cv.imshow(canvas, src);
+                            requestAnimationFrame(processVideo);
+                        }
+
+                        // Start processing the video stream
+                        processVideo();
+                    };
+                };
+
+                document.head.appendChild(script);
+            )");
+            break;
+        }
+}
+
+void MainWindow::cam_reset()
+{
+    view->page()->runJavaScript("document.body.firstChild.style.webkitFilter = ''");
+}
+
 //ANNONCE OBSTACLE
 void MainWindow::maj_collision(){
     //On recupere les valeurs des infrarouges et on affiche si une valeur est supérieure à 100
@@ -401,7 +524,7 @@ void MainWindow::maj_collision(){
 }
 
 void MainWindow::move_xbox()
-
+{
 
 
     //  Nouveau fonctionnement manette
@@ -415,73 +538,78 @@ void MainWindow::move_xbox()
         robot->set_manette(true);
     }
     // Lire les valeurs des axes du joystick
-float joystickX = xbox->axisLeftX();
-float joystickY = xbox->axisLeftY();
-// Seuil de tolérance pour les valeurs proches de zéro
-float tolerance = 0.1;
+    float joystickX = xbox->axisLeftX();
+    float joystickY = xbox->axisLeftY();
 
-// Vérifier les mouvements horizontaux
-if (joystickX > tolerance) {
-    // Mouvement vers la droite
-    if (joystickY > tolerance) {
-        // Diagonale haut-droite
-        robot->set_etat(8);
-    } else if (joystickY < -tolerance) {
-        // Diagonale bas-droite
-        robot->set_etat(9);
-    } else {
+    // Seuil de tolérance pour les valeurs proches de zéro
+    float tolerance = 0.1;
+
+    // Vérifier les mouvements horizontaux
+    if (joystickX > tolerance) {
         // Mouvement vers la droite
-        robot->set_etat(3);
-    }
-} else if (joystickX < -tolerance) {
-    // Mouvement vers la gauche
-    if (joystickY > tolerance) {
-        // Diagonale haut-gauche
-        robot->set_etat(6);
-    } else if (joystickY < -tolerance) {
-        // Diagonale bas-gauche
-        robot->set_etat(7);
-    } else {
+        if (joystickY > tolerance) {
+            // Diagonale haut-droite
+            robot->set_etat(8);
+        } else if (joystickY < -tolerance) {
+            // Diagonale bas-droite
+            robot->set_etat(9);
+        } else {
+            // Mouvement vers la droite
+            robot->set_etat(3);
+        }
+    } else if (joystickX < -tolerance) {
         // Mouvement vers la gauche
-     robot->set_etat(2);
+        if (joystickY > tolerance) {
+            // Diagonale haut-gauche
+            robot->set_etat(6);
+        } else if (joystickY < -tolerance) {
+            // Diagonale bas-gauche
+            robot->set_etat(7);
+        } else {
+            // Mouvement vers la gauche
+         robot->set_etat(2);
+        }
     }
-}
-// Vérifier les mouvements verticaux
-if (joystickY > tolerance) {
-    // Mouvement vers le haut
-    if (joystickX > tolerance) {
-        // Diagonale haut-droite
-        robot->set_etat(8);
-    } else if (joystickX < -tolerance) {
-        // Diagonale haut-gauche
-        robot->set_etat(6);
-    } else {
+
+
+
+    // Vérifier les mouvements verticaux
+    if (joystickY > tolerance) {
         // Mouvement vers le haut
-    robot->set_etat(1);
-    }
-} else if (joystickY < -tolerance) {
-    // Mouvement vers le bas
-    if (joystickX > tolerance) {
-        // Diagonale bas-droite
-        robot->set_etat(9);
-    } else if (joystickX < -tolerance) {
-        // Diagonale bas-gauche
-        robot->set_etat(7);
-    } else {
+        if (joystickX > tolerance) {
+            // Diagonale haut-droite
+            robot->set_etat(8);
+        } else if (joystickX < -tolerance) {
+            // Diagonale haut-gauche
+            robot->set_etat(6);
+        } else {
+            // Mouvement vers le haut
+        robot->set_etat(1);
+        }
+    } else if (joystickY < -tolerance) {
         // Mouvement vers le bas
-        robot->set_etat(4);
+        if (joystickX > tolerance) {
+            // Diagonale bas-droite
+            robot->set_etat(9);
+        } else if (joystickX < -tolerance) {
+            // Diagonale bas-gauche
+            robot->set_etat(7);
+        } else {
+            // Mouvement vers le bas
+            robot->set_etat(4);
+        }
     }
-}
-// Arrêter le mouvement du robot si le joystick est au centre
-if (fabs(joystickX) <= tolerance && fabs(joystickY) <= tolerance) {
-        robot->set_etat(5);
-}
 
-// Intensité des vibrations pour le moteur gauche et droit
-float vibrationLeft = 0.5; // Intensité du moteur gauche (valeur entre 0 et 1)
-float vibrationRight = 0.7; // Intensité du moteur droit (valeur entre 0 et 1)
+    // Arrêter le mouvement du robot si le joystick est au centre
+    if (fabs(joystickX) <= tolerance && fabs(joystickY) <= tolerance) {
+            robot->set_etat(5);
+    }
 
-// Activer les vibrations de la manette
-xbox->setVibration(vibrationLeft, vibrationRight);
+    // Intensité des vibrations pour le moteur gauche et droit
+    float vibrationLeft = 0.5; // Intensité du moteur gauche (valeur entre 0 et 1)
+    float vibrationRight = 0.7; // Intensité du moteur droit (valeur entre 0 et 1)
+
+    // Activer les vibrations de la manette
+    //xbox->SetVibration(vibrationLeft, vibrationRight);
 
 }

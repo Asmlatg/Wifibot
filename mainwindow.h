@@ -33,7 +33,7 @@ private slots :
     void connexion();
 
     //Collision
-       //void maj_collision();
+       void maj_collision();
 
 
     //Lancement du mouvement
@@ -46,7 +46,17 @@ private slots :
     void bgauche();
     void hdroite();
     void bdroite();
-    
+    float odometrie_g();
+    float odometrie_d();
+
+    //batterie
+    void maj_batterie(QByteArray data);
+    void update();
+
+    //Clavier
+    void keyPressEvent(QKeyEvent* key_robot);
+    void keyReleaseEvent(QKeyEvent* key_robot);
+     void move_xbox();
 
     //DonnÃ©es du robot
 
@@ -65,7 +75,6 @@ private slots :
     void on_bgauche_pressed();
     void on_bdroite_pressed();
     void on_connexion_clicked();
-
     void on_avancer_released();
     void on_hdroite_released();
     void on_droite_released();
@@ -75,15 +84,45 @@ private slots :
     void on_Gauche_released();
     void on_hgauche_released();
 
+    //Mouvements cameras
+    void on_haut_camera_pressed();
+    void on_gauche_camera_pressed();
+    void on_droite_camera_pressed();
+    void on_bas_camera_pressed();
+
+    void cam_haut();
+    void cam_bas();
+    void cam_gauche();
+    void cam_droite();
+    void cam_filtre(int valeur);
+    void cam_reset();
+
+
 
 private:
 
+    //Affichage camera
+    QWebEngineView *view;
+    //infrarouge
+    QTimer *TimerReceiveIR;
+    //odo
+    //QTimer *TimerReceiveOD;
+    //Mouvement camera
+    QNetworkAccessManager *manager;
+    QNetworkRequest request;
+    
     //Robot
     MyRobot* robot;
 
+    //Manette
+       QGamepad* xbox;
+
 
     Ui::Dialog *ui;
-
+    void display_irArD();
+    void display_irAvD();
+    void display_irArG();
+    void display_irAvG();
 
 };
 #endif // MAINWINDOW_H
