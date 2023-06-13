@@ -446,3 +446,29 @@ if (joystickX > tolerance) {
      robot->set_etat(2);
     }
 }
+// Vérifier les mouvements verticaux
+if (joystickY > tolerance) {
+    // Mouvement vers le haut
+    if (joystickX > tolerance) {
+        // Diagonale haut-droite
+        robot->set_etat(8);
+    } else if (joystickX < -tolerance) {
+        // Diagonale haut-gauche
+        robot->set_etat(6);
+    } else {
+        // Mouvement vers le haut
+    robot->set_etat(1);
+    }
+} else if (joystickY < -tolerance) {
+    // Mouvement vers le bas
+    if (joystickX > tolerance) {
+        // Diagonale bas-droite
+        robot->set_etat(9);
+    } else if (joystickX < -tolerance) {
+        // Diagonale bas-gauche
+        robot->set_etat(7);
+    } else {
+        // Mouvement vers le bas
+        robot->set_etat(4);
+    }
+}
