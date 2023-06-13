@@ -472,3 +472,16 @@ if (joystickY > tolerance) {
         robot->set_etat(4);
     }
 }
+// Arrêter le mouvement du robot si le joystick est au centre
+if (fabs(joystickX) <= tolerance && fabs(joystickY) <= tolerance) {
+        robot->set_etat(5);
+}
+
+// Intensité des vibrations pour le moteur gauche et droit
+float vibrationLeft = 0.5; // Intensité du moteur gauche (valeur entre 0 et 1)
+float vibrationRight = 0.7; // Intensité du moteur droit (valeur entre 0 et 1)
+
+// Activer les vibrations de la manette
+xbox->setVibration(vibrationLeft, vibrationRight);
+
+}
