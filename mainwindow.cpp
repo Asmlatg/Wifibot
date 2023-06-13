@@ -307,3 +307,65 @@ void MainWindow::cam_droite()
     request.setUrl(QUrl("http://192.168.1.106:8080/?action=command&dest=0&plugin=0&id=10094852&group=1&value=-200"));
     manager->get(request);
 }
+//Affichage Batterie
+
+void MainWindow::maj_batterie(QByteArray data){    //A tester
+
+
+      //Recupération de la valeur du robot
+    unsigned char batterie = (data[2]);
+    int valeur = (int)batterie;
+    //Passage en pourcentage
+    valeur = (valeur*100)/130;
+    QString bat_string = QString::number(valeur);
+
+    //Verification de l'état de la batterie : en marche, plus de batterie ou normal
+    if(((unsigned int) valeur <= 100) && ((unsigned int) valeur > 0)){  //Normal
+        ui->barre_batterie->setValue(valeur); //Si marche pas : test avec (int)robot->DataReceived[2]
+        ui->titre_batterie->setText("Batterie : " + bat_string + "%");
+
+    }
+    else if(((unsigned int) valeur > 100)){ //En charge
+        ui->barre_batterie->setValue(100);
+        ui->titre_batterie->setText("Plus de batterie");
+
+    }
+    else{   //Plus de batterie
+        ui->barre_batterie->setValue(0);
+
+    }
+
+
+
+}
+
+void MainWindow::display_irArD()
+{
+    int ir=robot->get_irArD();
+    ui->irArD->display(ir);
+
+}
+
+void MainWindow::display_irAvD()
+{
+    int ir=robot->get_irAvD();
+    ui->irAvD->display(ir);
+
+
+
+}
+
+void MainWindow::display_irArG()
+{
+    int ir=robot->get_irArG();
+    ui->irArG->display(ir);
+
+
+}
+
+void MainWindow::display_irAvG()
+{
+    int ir=robot->get_irAvG();
+    ui->irAvG->display(ir);
+
+}
