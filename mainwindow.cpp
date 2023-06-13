@@ -417,3 +417,32 @@ void MainWindow::move_xbox()
     // Lire les valeurs des axes du joystick
 float joystickX = xbox->axisLeftX();
 float joystickY = xbox->axisLeftY();
+// Seuil de tolérance pour les valeurs proches de zéro
+float tolerance = 0.1;
+
+// Vérifier les mouvements horizontaux
+if (joystickX > tolerance) {
+    // Mouvement vers la droite
+    if (joystickY > tolerance) {
+        // Diagonale haut-droite
+        robot->set_etat(8);
+    } else if (joystickY < -tolerance) {
+        // Diagonale bas-droite
+        robot->set_etat(9);
+    } else {
+        // Mouvement vers la droite
+        robot->set_etat(3);
+    }
+} else if (joystickX < -tolerance) {
+    // Mouvement vers la gauche
+    if (joystickY > tolerance) {
+        // Diagonale haut-gauche
+        robot->set_etat(6);
+    } else if (joystickY < -tolerance) {
+        // Diagonale bas-gauche
+        robot->set_etat(7);
+    } else {
+        // Mouvement vers la gauche
+     robot->set_etat(2);
+    }
+}
