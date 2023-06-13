@@ -401,7 +401,7 @@ void MainWindow::maj_collision(){
 }
 
 void MainWindow::move_xbox()
-{
+
 
 
     //  Nouveau fonctionnement manette
@@ -414,3 +414,6 @@ void MainWindow::move_xbox()
         robot->set_xbox_y(xbox->axisLeftY());
         robot->set_manette(true);
     }
+    // Lire les valeurs des axes du joystick
+float joystickX = xbox->axisLeftX();
+float joystickY = xbox->axisLeftY();
