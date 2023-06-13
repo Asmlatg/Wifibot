@@ -399,3 +399,18 @@ void MainWindow::maj_collision(){
     }
 
 }
+
+void MainWindow::move_xbox()
+{
+
+
+    //  Nouveau fonctionnement manette
+
+    if((xbox->axisLeftX() == 0) && (xbox->axisLeftY() ==0)){
+        robot->set_manette(false);
+    }
+    else{
+        robot->set_xbox_x(xbox->axisLeftX());
+        robot->set_xbox_y(xbox->axisLeftY());
+        robot->set_manette(true);
+    }
