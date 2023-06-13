@@ -369,3 +369,33 @@ void MainWindow::display_irAvG()
     ui->irAvG->display(ir);
 
 }
+//ANNONCE OBSTACLE
+void MainWindow::maj_collision(){
+    //On recupere les valeurs des infrarouges et on affiche si une valeur est supérieure à 100
+    unsigned char  irAvG= robot->DataReceived[3];
+    QString valeur_avg = QString::number(irAvG);
+    int val_avg = valeur_avg.toInt();
+    unsigned char irAvD = robot->DataReceived[11];
+    QString valeur_avd = QString::number(irAvD);
+    int val_avd = valeur_avd.toInt();
+    unsigned char irArD = robot->DataReceived[4];
+    QString valeur_ard = QString::number(irArD);
+    int val_ard = valeur_ard.toInt();
+    if ((val_avg > 100) && (val_avg > val_avd) && (val_avg > val_ard))
+    {
+        ui->collision->setText("Attention, obstacle detecté devant à gauche");
+    }
+    else if ((val_avd > 100) && (val_avd > val_avg) && (val_avd > val_ard))
+    {
+        ui->collision->setText("Attention, obstacle detecté devant à droite");
+    }
+    else if ((val_ard > 100) && (val_ard > val_avg) && (val_ard > val_avd))
+    {
+        ui->collision->setText("Attention, obstacle detecté derriere à droite");
+    }
+    else
+    {
+        ui->collision->setText("aucun obstacle detecté");
+    }
+
+}
