@@ -377,22 +377,20 @@ void MainWindow::display_irAvG()
 
 }
 
-float MainWindow::odometrie_g()
+void MainWindow::odometrie_g()
 {
-    float odo =float((((unsigned char)robot->DataReceived[8] << 24))+(((unsigned char)robot->DataReceived[7] << 16)) +(((unsigned char)robot->DataReceived[6] << 8)) +((unsigned char)robot->DataReceived[5]));
-        odo =odo/2448;
-         ui->odometrie_d->display(odo);
+    long odo =long((((long)robot->DataReceived[8] << 24))+(((long)robot->DataReceived[7] << 16)) +(((long)robot->DataReceived[6] << 8)) +((long)robot->DataReceived[5]));
+        odo = (unsigned int) odo/2448;
+         ui->odometrie_d->display((int)odo);
         qDebug()<<"odometrieG;";
-        return odo;
 }
-//nombre de tours effectué par les roues
-float MainWindow::odometrie_d( )
+
+void MainWindow::odometrie_d( )
 {
-    float odo =float((((unsigned char)robot->DataReceived[16] << 24))+(((unsigned char)robot->DataReceived[15] << 16)) +(((unsigned char)robot->DataReceived[14] << 8)) +((unsigned char)robot->DataReceived[13]));
-        odo = odo/2448;
-         ui->odometrie_d->display(odo);
+    long odo =long((((long)robot->DataReceived[16] << 24))+(((long)robot->DataReceived[15] << 16)) +(((long)robot->DataReceived[14] << 8)) +((long)robot->DataReceived[13]));
+        odo = (unsigned int)odo/2448;
+         ui->odometrie_d->display((int)odo);
           qDebug()<<"odometrieD;";
-          return odo;
 
 }
 
