@@ -7,8 +7,8 @@ MyRobot::MyRobot(QObject *parent) : QObject(parent) {
     m_etat = 0;
     m_manette = false;
     DataToSend.resize(9);
-                          //Pour A eviter le CRC
-    DataToSend[0] = 0xFF; //Taille
+                          //Pour A eviter le CRC (ne pas changer)
+    DataToSend[0] = 0xFF; //Taille (ne pas changer)
     DataToSend[1] = 0x07;   //Vitesse de la gauche
     DataToSend[2] = 0x0;
     DataToSend[3] = 0x0;
@@ -174,6 +174,72 @@ void MyRobot::move(int cas){
     Mutex.unlock();
 }
 
+void MyRobot::move_xbox(){
+
+    //Pour Ã©viter le CRC (ne pas changer)
+    DataToSend[0] = 0xFF;
+    //Taille (ne pas changer)
+    DataToSend[1] = 0x07;
+    //Vitesse de la gauche
+    DataToSend[2] = 0x0;
+    DataToSend[3] = 0x0;
+    //Vitesse de la droite
+    DataToSend[4] = 0x0;
+    DataToSend[5] = 0x0;
+    //Avancer ou reculer
+    DataToSend[6] = 0x0;
+
+    Mutex.tryLock();
+
+    //On parcourt le cercle trigonomÃ©trique dans le sens des aiguilles d'une montre
+    if((m_xbox_x > 0) && (m_xbox_y < 0)){
+        if(-(m_xbox_y) > m_xbox_x){   //Cas 1
+            DataToSend[2] = m_vitesse;
+            DataToSend[4] = m_vitesse - ((2*m_xbox_x/sqrt(2))*m_vitesse);
+            DataToSend[6] = 0x50;   //Avancer gauche et droite
+        }
+        else {  //Cas 2
+            DataToSend[2] = m_vitesse;
+            DataToSend[4] = m_vitesse - ((2*m_xbox_y/sqrt(2))*m_vitesse);
+            DataToSend[6] = 0x40;   //Avancer gauche
+        }
+    }
+    else if((m_xbox_x > 0) && (m_xbox_y > 0)){
+        if(m_xbox_y < m_xbox_x){   //Cas 3
+            DataToSend[2] = m_vitesse;
+            DataToSend[4] = m_vitesse - ((-2*m_xbox_y/sqrt(2))*m_vitesse);
+            DataToSend[6] = 0x10;   //Reculer gauche : Pour reculer vers la droite on doit faire avancer la roue de droite et faire reculer la roue de gauche
+        }
+        else {  //Cas 4
+            DataToSend[2] = m_vitesse;
+            DataToSend[4] = m_vitesse - ((2*m_xbox_x/sqrt(2))*m_vitesse);
+            DataToSend[6] = 0x0;    //Reculer
+        }
+    }
+    else if((m_xbox_x < 0) && (m_xbox_y > 0)){
+        if(m_xbox_y > -(m_xbox_x)){   //Cas 5
+            DataToSend[2] = m_vitesse - ((-2*m_xbox_x/sqrt(2))*m_vitesse);
+            DataToSend[4] = m_vitesse;
+            DataToSend[6] = 0x0;   //Reculer
+        }
+        else {  //Cas 6
+            DataToSend[2] = m_vitesse - ((-2*m_xbox_y/sqrt(2))*m_vitesse);
+            DataToSend[4] = m_vitesse;
+            DataToSend[6] = 0x40;    //Reculer droite : Pour reculer vers la gauche on doit faire avancer la roue de gauche et faire reculer la roue de droite
+        }
+    }
+    else if((m_xbox_x < 0) && (m_xbox_y < 0)){
+        if(-(m_xbox_y) < -(m_xbox_x)){   //Cas 7
+            DataToSend[2] = m_vitesse - ((2*m_xbox_y/sqrt(2))*m_vitesse);
+            DataToSend[4] = m_vitesse;
+            DataToSend[6] = 0x10;   //Avancer droite
+        }
+        else {  //Cas 8
+            DataToSend[2] = m_vitesse - ((-2*m_xbox_x/sqrt(2))*m_vitesse);
+            DataToSend[4] = m_vitesse;
+            DataToSend[6] = 0x50;   //Avancer gauche et droite
+        }
+    }
 
 
     DataToSend[7] = 0x0;
@@ -184,7 +250,7 @@ void MyRobot::move(int cas){
     DataToSend[8] = (unsigned char)(c16 >> 8);   //Partie haute
 
 
-    QMutex.unlock();
+    Mutex.unlock();
 }
 
 qint64 MyRobot::Crc16(QByteArray Adresse_tab , int pos)
@@ -223,6 +289,41 @@ void MyRobot::set_manette(bool valeur){
     m_manette = valeur;
 }
 
+void MyRobot::set_xbox_x(double valeur){
+    m_xbox_x = valeur;
+}
 
+void MyRobot::set_xbox_y(double valeur){
+    m_xbox_y = valeur;
+}
 
+int MyRobot::get_irArG()
+{
+    int ir;
+   ir=DataReceived[12];
+    return ir;
+}
+
+int MyRobot::get_irAvG()
+{
+    unsigned char IR=DataReceived[3];
+    int ir=(int)IR;
+    return ir;
+}
+
+int MyRobot::get_irArD()
+{
+
+    unsigned char IR=DataReceived[4];
+     int ir=(int)IR;
+    return ir;
+}
+
+int MyRobot::get_irAvD()
+{
+
+    unsigned char IR=DataReceived[11];
+    int ir=(int)IR;
+    return ir;
+}
 

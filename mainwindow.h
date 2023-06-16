@@ -24,6 +24,9 @@ class MainWindow : public QDialog
 
 public :
     MainWindow(QWidget *parent = nullptr);
+    bool isMovementStarted;
+    QTimer* squareMovementTimer;
+    QTimer* collisionTimer;
     ~MainWindow();
 
 private slots :
@@ -61,6 +64,7 @@ private slots :
     //DonnÃ©es du robot
 
     void on_slide_vitesse_valueChanged(int value);
+     void startcarre();
 
 
     //Boutons connexion et mouvement
@@ -98,6 +102,8 @@ private slots :
     void cam_reset();
 
 
+
+    void on_pushButton_clicked();
 
 private:
 

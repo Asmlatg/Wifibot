@@ -2,13 +2,11 @@
 #include "ui_mainwindow.h"
 #include <QUrl>
 #include <QWebEngineView>
-#include <opencv2/opencv.hpp>
 #include <QScreen>
 #include <QPixmap>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QDialog(parent)
-    , ui(new Ui::Dialog)
+    : QDialog(parent), ui(new Ui::Dialog), isMovementStarted(false)
 {
 
     ui->setupUi(this);
@@ -46,9 +44,36 @@ MainWindow::MainWindow(QWidget *parent)
 
        this->ui->camera->addWidget(view);
 
+       connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::startcarre);
+
+       collisionTimer = new QTimer(this);
+
+       connect(collisionTimer, &QTimer::timeout, this, &MainWindow::maj_collision);
+
+       int interval = 1000; // Adjust as needed
+       collisionTimer->setInterval(interval);
+
+       collisionTimer->start();
 
 }
+void MainWindow::startcarre() {
+       if (! isMovementStarted) {
+           isMovementStarted = true;
+           QTimer* squareMovementTimer = new QTimer(this);
+           connect(squareMovementTimer, &QTimer::timeout, this, &MainWindow::on_pushButton_clicked);
 
+           // Start the QTimer with the desired interval (e.g., 500 milliseconds)
+           squareMovementTimer->start(5000);
+       } else {
+           // Stop the movement
+           isMovementStarted = false;
+
+           // Disconnect the timeout signal of the QTimer from the createSquareMovement() slot
+           disconnect(squareMovementTimer, &QTimer::timeout, this, &MainWindow::on_pushButton_clicked);
+           squareMovementTimer->stop();
+           squareMovementTimer->deleteLater();
+       }
+}
 void MainWindow::update()
 {
     QByteArray data = robot->DataReceived;
@@ -377,21 +402,23 @@ void MainWindow::display_irAvG()
 
 }
 
-void MainWindow::odometrie_g()
+float MainWindow::odometrie_d( )
 {
-    long odo =long((((long)robot->DataReceived[8] << 24))+(((long)robot->DataReceived[7] << 16)) +(((long)robot->DataReceived[6] << 8)) +((long)robot->DataReceived[5]));
-        odo = (unsigned int) odo/2448;
-         ui->odometrie_d->display((int)odo);
-        qDebug()<<"odometrieG;";
+    float odo =long((((unsigned char)robot->DataReceived[16] << 24))+(((unsigned char)robot->DataReceived[15] << 16)) +(((unsigned char)robot->DataReceived[14] << 8)) +((unsigned char)robot->DataReceived[13]));
+    odo = odo/2448;
+    ui->odometrie_d->display(odo);
+    qDebug()<<"odometrieD;";
+    return odo;
+
 }
 
-void MainWindow::odometrie_d( )
+float MainWindow::odometrie_g()
 {
-    long odo =long((((long)robot->DataReceived[16] << 24))+(((long)robot->DataReceived[15] << 16)) +(((long)robot->DataReceived[14] << 8)) +((long)robot->DataReceived[13]));
-        odo = (unsigned int)odo/2448;
-         ui->odometrie_d->display((int)odo);
-          qDebug()<<"odometrieD;";
-
+    float odo =float((((unsigned char)robot->DataReceived[8] << 24))+(((unsigned char)robot->DataReceived[7] << 16)) +(((unsigned char)robot->DataReceived[6] << 8)) +((unsigned char)robot->DataReceived[5]));
+    odo =odo/2448;
+    ui->odometrie_g->display(odo);
+    qDebug()<<"odometrieG;";
+    return odo ;
 }
 
 void MainWindow::cam_filtre(int valeur)
@@ -427,60 +454,6 @@ void MainWindow::cam_filtre(int valeur)
         view->page()->runJavaScript("var filtres = document.body.firstChild.style.webkitFilter; document.body.firstChild.style.webkitFilter = filtres+' brightness(50%)';");
         break;
     case 8:
-            // Détecter les visages et ajouter des rectangles
-            view->page()->runJavaScript(R"(
-                var video = document.body.firstChild;
-                var canvas = document.createElement('canvas');
-                var context = canvas.getContext('2d');
-
-                canvas.width = video.offsetWidth;
-                canvas.height = video.offsetHeight;
-                video.parentNode.appendChild(canvas);
-
-                var script = document.createElement('script');
-                script.src = 'path/to/opencv.js';
-                script.onload = function() {
-                    cv.onRuntimeInitialized = function() {
-                        var src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-                        var dst = new cv.Mat();
-                        var gray = new cv.Mat();
-
-                        var cap = new cv.VideoCapture(video);
-                        var classifier = new cv.CascadeClassifier();
-
-                        // Load the pre-trained face detection classifier XML file
-                        classifier.load('https://raw.githubusercontent.com/kipr/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml');
-
-                        function processVideo() {
-                            cap.read(src);
-
-                            // Convert the video frame to grayscale
-                            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-                            cv.equalizeHist(gray, gray);
-
-                            // Detect faces in the grayscale frame
-                            var faces = new cv.RectVector();
-                            classifier.detectMultiScale(gray, faces);
-
-                            // Draw rectangles around the detected faces
-                            for (var i = 0; i < faces.size(); i++) {
-                                var face = faces.get(i);
-                                var point1 = new cv.Point(face.x, face.y);
-                                var point2 = new cv.Point(face.x + face.width, face.y + face.height);
-                                cv.rectangle(src, point1, point2, [255, 0, 0, 255], 2);
-                            }
-
-                            cv.imshow(canvas, src);
-                            requestAnimationFrame(processVideo);
-                        }
-
-                        // Start processing the video stream
-                        processVideo();
-                    };
-                };
-
-                document.head.appendChild(script);
-            )");
             break;
         }
 }
@@ -609,5 +582,51 @@ void MainWindow::move_xbox()
 
     // Activer les vibrations de la manette
     //xbox->SetVibration(vibrationLeft, vibrationRight);
+
+}
+int movementState;
+
+void MainWindow::on_pushButton_clicked()
+{
+
+    // on fixe le nombre de tours de roue à attteindr
+    const int targetOdometry = 20;
+    if ( odometrie_g() >= targetOdometry && odometrie_d() >= targetOdometry) {
+            // si les 2 roue ont effectué le nombre de tours on change l'etat
+            movementState++;
+    }
+
+    switch (movementState) {
+    case 0:
+            avancer();
+            break;
+    case 1:
+            gauche();
+            break;
+    case 2:
+            avancer();
+            break;
+    case 3: // Stop
+            gauche();
+            break;
+    case 4 :
+            avancer();
+            break;
+    case 5:
+            stop();
+            break;
+    }
+    //incremente la valeur sur le robot n'est pas à l'arrêt
+    if (movementState != 3) {
+            movementState++;
+    }
+
+    // reinitialiser le compteur lorsque le carre est terminé
+    if (movementState > 3) {
+            movementState = 0;
+    }
+
+
+
 
 }

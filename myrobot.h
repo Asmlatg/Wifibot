@@ -16,10 +16,18 @@ public:
     void doConnect();
     void disConnect();
     void move(int cas);
+    void move_xbox();
     void set_vitesse(int valeur);
     void set_etat(int valeur);
     void set_manette(bool valeur);
+    void set_xbox_x(double valeur);
+    void set_xbox_y(double valeur);
     int get_vitesse();
+    int get_irArG();
+    int get_irAvD();
+    int get_irAvG();
+    int get_irArD();
+
 
     //short Crc16(unsigned char *Adresse_tab , unsigned char Taille_max);
     qint64 Crc16(QByteArray Adresse_tab , int Taille_max);
@@ -43,6 +51,8 @@ private:
     int m_etat; //etats : avancer/aller Ã  gauche...
     //Pour la manette
     bool m_manette;    //Si true : L'utilisateur utilise la manette
+    double m_xbox_x;
+    double m_xbox_y;
 };
 
 #endif // MYROBOT_H
